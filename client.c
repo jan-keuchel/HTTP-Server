@@ -4,50 +4,70 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-
-
-
+#include <unistd.h>
 
 int main(void) {
     printf("--- Client ---\n");
 
+    int             s;
+    int             sfd;
     struct addrinfo hints;
-    struct addrinfo *res;
+    struct addrinfo *res, *rp;
 
+    // Set everything to 0
     memset(&hints, 0, sizeof(hints));
+ 
+    // And specify some values
+    hints.ai_family     = AF_INET;      // Use IPv4
+    hints.ai_socktype   = SOCK_STREAM;  // Reliable messages
+    hints.ai_protocol   = 0;            // Use any protocol
 
-    hints.ai_family     = AF_INET;
-    hints.ai_socktype   = SOCK_STREAM;
-    hints.ai_protocol   = 0;
-
-    int s = getaddrinfo("localhost", "2390", &hints, &res);
+    // Creating the addrinfo structure
+    s = getaddrinfo("localhost", "2390", &hints, &res);
     if (s != 0) {
         fprintf(stderr, "gai error: %s\n", gai_strerror(errno));
         exit(1);
     }
 
+    // Additional check
     if (res == NULL) {
         fprintf(stderr, "resulting addrinfo is NULL.\n");
         exit(1);
     }
 
-    int sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sfd == -1) {
-        fprintf(stderr, "sfd error: %s\n", strerror(errno));
-        exit(1);
+    // Find the first connection that works
+    for (rp = res; rp != NULL; rp = rp->ai_next) {
+        // Get a file descriptor through which can be communicated
+        sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (sfd == -1)
+            continue;
+
+        // Try and connect to the server
+        if (connect(sfd, res->ai_addr, res->ai_addrlen) != -1)
+            break;
+
+        close(sfd);
+    }
+    // Free heap-allocated data
+    freeaddrinfo(res);
+
+    // Check if none of the addrinfo's worked
+    if (rp == NULL) {
+        fprintf(stderr, "Could not connect.\n");
+        exit(EXIT_FAILURE);
     }
 
-    if (connect(sfd, res->ai_addr, res->ai_addrlen) == -1) {
-        fprintf(stderr, "connect error: %s\n", strerror(errno));
-        exit(1);
-    }
-
-    char* msg = "Hello there!\n";
+    // Send a test message
+    char* msg = "That was quite some work...\n";
     int n = send(sfd, msg, strlen(msg), 0);
     if (n != strlen(msg)) {
         fprintf(stderr, "send error: %s\n", strerror(errno));
         exit(1);
     }
 
+    // Close file descriptor
+    close(sfd);
+
     printf("Success.\n");
+    exit(EXIT_SUCCESS);
 }
