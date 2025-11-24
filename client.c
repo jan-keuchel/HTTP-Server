@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define BUFSIZE 500
+
 int main(void) {
     printf("--- Client ---\n");
 
@@ -57,13 +59,39 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
 
-    // Send a test message
-    char* msg = "That was quite some work...\n";
-    int n = send(sfd, msg, strlen(msg), 0);
-    if (n != strlen(msg)) {
-        fprintf(stderr, "send error: %s\n", strerror(errno));
-        exit(1);
+    char buf[BUFSIZE] = {0};
+    char msg[BUFSIZE] = {0};
+
+    for (;;) {
+        // --- Read from stdin:
+        fgets(msg, BUFSIZE, stdin);
+
+        // -1 because of newline char
+        if (strlen(msg) - 1 == 0) {
+            printf("End of transmission.\n");
+            break;
+        }
+
+        // Last char is newline
+        msg[strlen(msg) - 1] = '\0';
+
+        // --- Send message to server:
+        int n = send(sfd, msg, strlen(msg), 0);
+        if (n != strlen(msg)) {
+            fprintf(stderr, "send error: %s\n", strerror(errno));
+            exit(1);
+        }
+
+        // --- Receive response:
+        if (n = recv(sfd, buf, BUFSIZE, 0), n == -1) {
+            fprintf(stderr, "recv error: %s\n", strerror(errno));
+            exit(1);
+        }
+        buf[n] = '\0';
+        printf("Server response: %s\n", buf);
     }
+
+
 
     // Close file descriptor
     close(sfd);

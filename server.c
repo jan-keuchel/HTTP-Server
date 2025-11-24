@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
+#define BUFSIZE 500
 
 int main(void) {
     printf("--- Server ---\n");
@@ -79,14 +80,30 @@ int main(void) {
         exit(1);
     }
 
-    char buf[500] = {0};
-    // Read data
-    if (recv(cfd, buf, 500, 0) == -1) {
-        fprintf(stderr, "recv error: %s\n", strerror(errno));
-        exit(1);
-    }
+    char buf[BUFSIZE] = {0};
+    int n = 0;
 
-    printf("Server received: %s\n", buf);
+    for (;;) {
+        // --- Read data
+        if (n = recv(cfd, buf, BUFSIZE, 0), n == -1) {
+            fprintf(stderr, "recv error: %s\n", strerror(errno));
+            exit(1);
+        }
+        printf("Server received: %s\n", buf);
+
+        // --- Craft response
+        buf[n] = '*';
+        buf[n+1] = '\0';
+
+        // --- Send response
+        printf("Sending response back: %s\n", buf);
+        n = send(cfd, buf, strlen(buf), 0);
+        if (n != strlen(buf)) {
+            fprintf(stderr, "send error: %s\n", strerror(errno));
+            exit(1);
+        }
+
+    }
 
     close(cfd);
     close(sfd);
