@@ -100,7 +100,16 @@ int main(void) {
             continue;
         }
 
+        // Print request for debugging
         printf("Received from client:\n%s\n", buf);
+
+        // Terminate string after first line
+        for (int j = 0; j < n; j++) {
+            if (buf[j] == '\n')
+                buf[j] = '\0';
+        }
+
+        printf("Extracted first line:\n%s\n", buf);
 
         // --- Craft response
         char response[] = "HTTP/1.1 200 OK\r\n\r\nAre you getting this?";
