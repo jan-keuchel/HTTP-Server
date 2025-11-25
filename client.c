@@ -88,7 +88,7 @@ int main(void) {
             exit(1);
         }
         buf[n] = '\0';
-        printf("Server response: %s\n", buf);
+        printf("%s\n", buf);
     }
 
 

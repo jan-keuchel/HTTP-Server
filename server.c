@@ -40,7 +40,7 @@ int main(void) {
     }
 
     // Find the socket that can be bound
-    for (rp = res; res != NULL; res = res->ai_next) {
+    for (rp = res; rp != NULL; rp = rp->ai_next) {
         // Get a file descriptor through clients can be accepted
         sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
         if (sfd == -1)
@@ -72,6 +72,8 @@ int main(void) {
     struct sockaddr_storage c_addr;
     socklen_t               c_addr_len = sizeof(c_addr);
 
+    printf("Waiting for client...\n");
+
     // Accept in incoming connection request
     // This yields a new file descriptor for the specific client
     int cfd = accept(sfd, (struct sockaddr *) &c_addr, &c_addr_len);
@@ -79,6 +81,9 @@ int main(void) {
         fprintf(stderr, "accept error: %s\n", strerror(errno));
         exit(1);
     }
+
+    printf("Client connected.\n");
+    printf("Waiting for data...\n");
 
     char buf[BUFSIZE] = {0};
     int n = 0;
@@ -88,6 +93,11 @@ int main(void) {
         if (n = recv(cfd, buf, BUFSIZE, 0), n == -1) {
             fprintf(stderr, "recv error: %s\n", strerror(errno));
             exit(1);
+        }
+
+        if (n == 0) {
+            printf("Client termianted chat.\n");
+            break;
         }
         printf("Server received: %s\n", buf);
 
