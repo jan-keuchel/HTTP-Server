@@ -72,23 +72,23 @@ int main(void) {
     struct sockaddr_storage c_addr;
     socklen_t               c_addr_len = sizeof(c_addr);
 
-    printf("Waiting for client...\n");
-
-    // Accept in incoming connection request
-    // This yields a new file descriptor for the specific client
-    int cfd = accept(sfd, (struct sockaddr *) &c_addr, &c_addr_len);
-    if (cfd == -1) {
-        fprintf(stderr, "accept error: %s\n", strerror(errno));
-        exit(1);
-    }
-
-    printf("Client connected.\n");
-    printf("Waiting for data...\n");
-
-    char buf[BUFSIZE] = {0};
-    int n = 0;
-
     for (;;) {
+        printf("Waiting for client...\n");
+
+        // Accept in incoming connection request
+        // This yields a new file descriptor for the specific client
+        int cfd = accept(sfd, (struct sockaddr *) &c_addr, &c_addr_len);
+        if (cfd == -1) {
+            fprintf(stderr, "accept error: %s\n", strerror(errno));
+            exit(1);
+        }
+
+        printf("Client connected.\n");
+        printf("Waiting for HTTP request...\n");
+
+        char buf[BUFSIZE] = {0};
+        int n = 0;
+
         // --- Read data
         if (n = recv(cfd, buf, BUFSIZE, 0), n == -1) {
             fprintf(stderr, "recv error: %s\n", strerror(errno));
@@ -96,26 +96,26 @@ int main(void) {
         }
 
         if (n == 0) {
-            printf("Client termianted chat.\n");
-            break;
+            printf("Client termianted connection.\n");
+            continue;
         }
-        printf("Server received: %s\n", buf);
+
+        printf("Received from client:\n%s\n", buf);
 
         // --- Craft response
-        buf[n] = '*';
-        buf[n+1] = '\0';
+        char response[] = "HTTP/1.1 200 OK\r\n\r\nAre you getting this?";
 
         // --- Send response
-        printf("Sending response back: %s\n", buf);
-        n = send(cfd, buf, strlen(buf), 0);
-        if (n != strlen(buf)) {
+        n = send(cfd, response, strlen(response), 0);
+        if (n != strlen(response)) {
             fprintf(stderr, "send error: %s\n", strerror(errno));
+            fprintf(stderr, "Only sent %d bytes.\n", n);
             exit(1);
         }
 
+        close(cfd);
     }
 
-    close(cfd);
     close(sfd);
 
     exit(EXIT_SUCCESS);
