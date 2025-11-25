@@ -42,12 +42,12 @@ int main(void) {
     // Find the socket that can be bound
     for (rp = res; rp != NULL; rp = rp->ai_next) {
         // Get a file descriptor through clients can be accepted
-        sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (sfd == -1)
             continue;
 
         // bind the socket file descriptor to an address
-        if (bind(sfd, res->ai_addr, res->ai_addrlen) == 0)
+        if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
             break;
 
         close(sfd);

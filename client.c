@@ -40,12 +40,12 @@ int main(void) {
     // Find the first connection that works
     for (rp = res; rp != NULL; rp = rp->ai_next) {
         // Get a file descriptor through which can be communicated
-        sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (sfd == -1)
             continue;
 
         // Try and connect to the server
-        if (connect(sfd, res->ai_addr, res->ai_addrlen) != -1)
+        if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
             break;
 
         close(sfd);
