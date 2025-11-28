@@ -10,6 +10,41 @@
 
 #define BUFSIZE 500
 
+char *handle_request(char *req) {
+
+    // Initialize string tokenization
+    char *token = strtok(req, " ");
+
+    if (token == NULL) {
+        fprintf(stderr, "strtok error: given empty string.\n");
+        return NULL;
+    }
+
+    // Check if a HTTP GET request was received
+    if (strcmp(token, "GET") != 0) {
+        fprintf(stderr, "Did not get a 'GET' request. We don't do that here...\n");
+        return NULL;
+    }
+
+    token = strtok(NULL, " ");
+    if (token == NULL) {
+        fprintf(stderr, "strtok error: No resource specified.\n");
+        return NULL;
+    }
+
+    // Create the HTTP response
+    char msg[] = "HTTP/1.1 200 OK\r\n\r\nYou just requested the reousece: ";
+    char *ret = malloc(strlen(msg) + strlen(token) + 1);
+    strcpy(ret, msg);
+    ret = strcat(ret, token);
+    if (ret == NULL) {
+        fprintf(stderr, "strdup error: %s\n", strerror(errno));
+        return NULL;
+    }
+
+    return ret;
+}
+
 int main(void) {
     printf("--- Server ---\n");
 
@@ -111,17 +146,17 @@ int main(void) {
 
         printf("Extracted first line:\n%s\n", buf);
 
-        // --- Craft response
-        char response[] = "HTTP/1.1 200 OK\r\n\r\nAre you getting this?";
+        char *res = handle_request(buf);
 
         // --- Send response
-        n = send(cfd, response, strlen(response), 0);
-        if (n != strlen(response)) {
+        n = send(cfd, res, strlen(res), 0);
+        if (n != strlen(res)) {
             fprintf(stderr, "send error: %s\n", strerror(errno));
             fprintf(stderr, "Only sent %d bytes.\n", n);
             exit(1);
         }
 
+        free(res);
         close(cfd);
     }
 
